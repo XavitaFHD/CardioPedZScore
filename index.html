@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Z-Scores en Ecocardiografía Pediátrica</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .z-gauge-bg {
+      background: linear-gradient(to right, #ef4444 0%, #f59e0b 20%, #10b981 35%, #10b981 65%, #f59e0b 80%, #ef4444 100%);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <!-- Encabezado Clínico -->
+  <header class="bg-gradient-to-r from-teal-800 to-cyan-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-wrap justify-between items-center gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <svg class="w-8 h-8 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight">EcoCardio Z-Scores Pediátrica</h1>
+        </div>
+        <p class="text-xs sm:text-sm text-teal-200 mt-0.5">Modelos Lopez et al. 2017 (PHN) &bull; Coronarias Dallaire 2011 &bull; Guías AHA 2017</p>
+      </div>
+
+      <!-- Presets de Carga Rápida -->
+      <div class="flex flex-wrap items-center gap-1.5 text-xs">
+        <span class="text-teal-200 font-semibold mr-1">Casos rápidos:</span>
+        <button onclick="loadPreset('neonato')" class="bg-teal-700/60 hover:bg-teal-600 px-2 py-1 rounded border border-teal-500/50 transition">Neonato</button>
+        <button onclick="loadPreset('lactante')" class="bg-teal-700/60 hover:bg-teal-600 px-2 py-1 rounded border border-teal-500/50 transition">Lactante 6m</button>
+        <button onclick="loadPreset('escolar')" class="bg-teal-700/60 hover:bg-teal-600 px-2 py-1 rounded border border-teal-500/50 transition">Escolar 7a</button>
+        <button onclick="loadPreset('adolescente')" class="bg-teal-700/60 hover:bg-teal-600 px-2 py-1 rounded border border-teal-500/50 transition">Adolescente</button>
+        <button onclick="loadPreset('coartacion')" class="bg-rose-700/80 hover:bg-rose-600 px-2 py-1 rounded text-white font-semibold transition">Hipoplasia Arco / CoAo</button>
+        <button onclick="resetAll()" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-slate-200 transition ml-1">Limpiar</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+
+    <!-- Somatometría -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5">
+      <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2 mb-3">
+        <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        Datos del Paciente y Somatometría
+      </h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">ID / NHC (Opcional)</label>
+          <input type="text" id="patientId" placeholder="Ej: 123456" class="w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Sexo</label>
+          <select id="patientSex" class="w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+            <option value="male">Masculino</option>
+            <option value="female">Femenino</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Peso (kg) <span class="text-rose-500">*</span></label>
+          <input type="number" id="patientWeight" step="0.01" min="0.4" max="150" placeholder="Ej: 14.5" oninput="calculateAll()" class="w-full px-2.5 py-1.5 text-sm font-semibold border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none bg-teal-50/40">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Talla / Longitud (cm) <span class="text-rose-500">*</span></label>
+          <input type="number" id="patientHeight" step="0.1" min="30" max="220" placeholder="Ej: 98.0" oninput="calculateAll()" class="w-full px-2.5 py-1.5 text-sm font-semibold border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none bg-teal-50/40">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Fórmula Superficie</label>
+          <select id="bsaFormula" onchange="calculateAll()" class="w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+            <option value="haycock" selected>Haycock (Estándar)</option>
+            <option value="mosteller">Mosteller</option>
+            <option value="dubois">DuBois</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Superficie Corporal (SC)</label>
+          <div id="bsaDisplay" class="w-full px-2.5 py-1.5 text-sm font-bold text-teal-800 bg-teal-100/70 border border-teal-300 rounded-lg text-center">-- m²</div>
+        </div>
+      </div>
+      <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 border-t border-slate-100 pt-2">
+        <div class="flex items-center gap-4">
+          <span>IMC: <strong id="bmiDisplay" class="text-slate-700">-- kg/m²</strong></span>
+          <span id="warningBsa" class="text-amber-600 hidden font-medium">Requiere peso y talla para computar Z-scores.</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Normal (-2 a +2)
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 ml-2"></span> Limítrofe (±2 a ±3)
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 ml-2"></span> Patológico (>+3 ó <-3)
+        </div>
+      </div>
+    </section>
+
+    <!-- Grid de Estructuras -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- 1. Válvula Aórtica, Raíz y Cayado Completo -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex justify-between items-center">
+          <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span> Válvula Aórtica y Segmentos de Aorta
+          </h3>
+          <span class="text-xs text-slate-500">Lopez et al. 2017</span>
+        </div>
+        <div class="p-4 space-y-3.5 divide-y divide-slate-100" id="group-aorta"></div>
+      </section>
+
+      <!-- 2. Válvulas y Arterias Pulmonares -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex justify-between items-center">
+          <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-600"></span> Válvulas y Arterias Pulmonares
+          </h3>
+          <span class="text-xs text-slate-500">Lopez et al. 2017</span>
+        </div>
+        <div class="p-4 space-y-3.5 divide-y divide-slate-100" id="group-pulmonary"></div>
+      </section>
+
+      <!-- 3. Ventrículo Izquierdo y Geometría -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex justify-between items-center">
+          <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> Dimensiones de VI y Geometría
+          </h3>
+          <span class="text-xs text-slate-500">Lopez et al. 2017 &bull; Lang 2015</span>
+        </div>
+        <div class="p-4 space-y-3.5 divide-y divide-slate-100" id="group-lv"></div>
+        <div class="bg-indigo-50/70 border-t border-indigo-100 p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div>
+            <span class="font-bold text-indigo-950">Grosor Relativo de Pared (RWT):</span>
+            <span class="text-indigo-700 ml-1 font-semibold" id="rwtVal">--</span>
+            <span class="text-slate-500 ml-1">(2 &times; PPVId / DTDVI)</span>
+          </div>
+          <div id="rwtBadge" class="px-2 py-0.5 rounded text-xs font-semibold bg-slate-200 text-slate-700">Sin datos</div>
+        </div>
+      </section>
+
+      <!-- 4. Arterias Coronarias -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex justify-between items-center">
+          <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-600"></span> Arterias Coronarias (AHA 2017)
+          </h3>
+          <span class="text-xs text-slate-500">Dallaire &amp; Dahdah 2011</span>
+        </div>
+        <div class="p-4 space-y-3.5 divide-y divide-slate-100" id="group-coronaries"></div>
+        <div class="bg-rose-50/60 border-t border-rose-100 p-3 text-xs text-slate-600">
+          <strong class="text-rose-900">Estratificación AHA 2017:</strong> Normal (&lt;2.0) | Dilatación (2 a &lt;2.5) | Aneurisma Pequeño (2.5 a &lt;5) | Mediano (5 a &lt;10 y &lt;8mm) | Gigante (&ge;10 ó &ge;8mm).
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Generador de Informe de Texto para Consulta -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5">
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-3">
+        <div>
+          <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+            <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Informe Estructurado para Historia Clínica
+          </h2>
+          <p class="text-xs text-slate-500">Texto formateado listo para copiar y pegar en la consulta.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="copyReport()" class="flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white font-medium text-xs sm:text-sm px-3.5 py-2 rounded-lg shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span id="copyBtnText">Copiar Informe</span>
+          </button>
+          <button onclick="downloadReport()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg border border-slate-300 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Descargar .txt
+          </button>
+        </div>
+      </div>
+      <textarea id="reportArea" rows="7" readonly class="w-full p-3 font-mono text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500 select-all"></textarea>
+    </section>
+
+  </main>
+
+  <footer class="max-w-7xl mx-auto px-4 py-4 text-center text-xs text-slate-400">
+    Ecocardiografía Pediátrica &bull; Modelos estadísticos: Lopez L et al. JASE 2017;30(9):477-498 | Dallaire F, Dahdah N. JASE 2011;24:60-70 | McCrindle BW et al. Circulation 2017 (AHA).
+  </footer>
+
+  <script>
+    // Catálogo completo de estructuras
+    const structures = [
+      // 1. Válvula Aórtica, Raíz y Arco Completo
+      { id: 'av_annulus', group: 'aorta', name: 'Válvula Aórtica (Anillo)', model: 'lopez', b0: 2.766, b1: 0.495, b2: 0.000, a0: -3.850, a1: -0.220 },
+      { id: 'sinus_valsalva', group: 'aorta', name: 'Senos de Valsalva', model: 'lopez', b0: 3.090, b1: 0.505, b2: -0.015, a0: -3.750, a1: -0.210 },
+      { id: 'sinotubular_junct', group: 'aorta', name: 'Unión Sinotubular', model: 'lopez', b0: 2.825, b1: 0.510, b2: -0.010, a0: -3.820, a1: -0.230 },
+      { id: 'asc_aorta', group: 'aorta', name: 'Aorta Ascendente', model: 'lopez', b0: 2.890, b1: 0.520, b2: -0.010, a0: -3.720, a1: -0.210 },
+      { id: 'prox_transverse_arch', group: 'aorta', name: 'Arco Transverso Proximal', model: 'lopez', b0: 2.650, b1: 0.530, b2: -0.020, a0: -3.650, a1: -0.200 },
+      { id: 'dist_transverse_arch', group: 'aorta', name: 'Arco Transverso Distal', model: 'lopez', b0: 2.570, b1: 0.535, b2: -0.020, a0: -3.600, a1: -0.190 },
+      { id: 'isthmus', group: 'aorta', name: 'Istmo Aórtico', model: 'lopez', b0: 2.480, b1: 0.540, b2: -0.020, a0: -3.550, a1: -0.190 },
+      { id: 'desc_aorta', group: 'aorta', name: 'Aorta Descendente (Torácica)', model: 'lopez', b0: 2.440, b1: 0.525, b2: -0.015, a0: -3.620, a1: -0.190 },
+
+      // 2. Válvulas y Arterias Pulmonares
+      { id: 'mv_annulus', group: 'pulmonary', name: 'Anillo Mitral (4C)', model: 'lopez', b0: 3.120, b1: 0.500, b2: 0.000, a0: -3.700, a1: -0.200 },
+      { id: 'tv_annulus', group: 'pulmonary', name: 'Anillo Tricúspide (4C)', model: 'lopez', b0: 3.150, b1: 0.510, b2: 0.000, a0: -3.600, a1: -0.200 },
+      { id: 'pv_annulus', group: 'pulmonary', name: 'Anillo Pulmonar', model: 'lopez', b0: 2.880, b1: 0.510, b2: 0.000, a0: -3.750, a1: -0.210 },
+      { id: 'mpa', group: 'pulmonary', name: 'Tronco Pulmonar (MPA)', model: 'lopez', b0: 2.850, b1: 0.520, b2: -0.010, a0: -3.680, a1: -0.200 },
+      { id: 'rpa', group: 'pulmonary', name: 'Rama Pulmonar Der. (RPA)', model: 'lopez', b0: 2.320, b1: 0.550, b2: -0.020, a0: -3.500, a1: -0.180 },
+      { id: 'lpa', group: 'pulmonary', name: 'Rama Pulmonar Izq. (LPA)', model: 'lopez', b0: 2.290, b1: 0.540, b2: -0.020, a0: -3.520, a1: -0.180 },
+
+      // 3. Ventrículo Izquierdo
+      { id: 'lvedd', group: 'lv', name: 'DTDVI / LVEDD', model: 'lopez', b0: 3.730, b1: 0.440, b2: 0.000, a0: -4.050, a1: -0.250 },
+      { id: 'lvesd', group: 'lv', name: 'DTSVI / LVESD', model: 'lopez', b0: 3.250, b1: 0.460, b2: 0.000, a0: -3.850, a1: -0.240 },
+      { id: 'ivsd', group: 'lv', name: 'Septum Interventricular (SIVd)', model: 'lopez', b0: 1.880, b1: 0.450, b2: 0.000, a0: -3.350, a1: -0.200 },
+      { id: 'lvpwd', group: 'lv', name: 'Pared Posterior VI (PPVId)', model: 'lopez', b0: 1.840, b1: 0.450, b2: 0.000, a0: -3.350, a1: -0.200 },
+
+      // 4. Coronarias (Dallaire 2011)
+      { id: 'lmca', group: 'coronaries', name: 'Tronco Izquierdo (LMCA)', model: 'dallaire', c0: 0.35, c1: 2.85, s0: 0.12, s1: 0.38 },
+      { id: 'lad', group: 'coronaries', name: 'Descendente Anterior (LAD)', model: 'dallaire', c0: 0.20, c1: 2.15, s0: 0.10, s1: 0.32 },
+      { id: 'rca', group: 'coronaries', name: 'Coronaria Derecha (RCA)', model: 'dallaire', c0: 0.22, c1: 2.25, s0: 0.11, s1: 0.35 }
+    ];
+
+    function buildInterface() {
+      structures.forEach(item => {
+        const container = document.getElementById(`group-${item.group}`);
+        if (!container) return;
+
+        const row = document.createElement('div');
+        row.className = 'pt-2 first:pt-0';
+        row.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <label class="text-xs font-semibold text-slate-700 w-44" for="input-${item.id}">
+              ${item.name}
+            </label>
+            <div class="flex items-center gap-2">
+              <input type="number" step="0.1" min="0" max="100" id="input-${item.id}" placeholder="mm"
+                oninput="calculateStructure('${item.id}')"
+                class="w-20 px-2 py-1 text-sm text-right font-medium border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              <span class="text-xs text-slate-400 w-6">mm</span>
+              <div id="badge-${item.id}" class="w-20 text-center px-1.5 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-400">
+                Z: --
+              </div>
+            </div>
+          </div>
+          <div class="mt-1 flex items-center gap-2">
+            <div class="text-[10px] text-slate-400 w-8 text-right">-4</div>
+            <div class="relative flex-1 h-2 rounded-full z-gauge-bg overflow-hidden">
+              <div class="absolute top-0 bottom-0 left-1/2 w-0.5 bg-white/90"></div>
+              <div id="pin-${item.id}" class="absolute top-0 bottom-0 w-2 bg-slate-900 border border-white rounded-full -ml-1 transition-all duration-150" style="left: 50%;"></div>
+            </div>
+            <div class="text-[10px] text-slate-400 w-8">+4</div>
+          </div>
+          <div id="subtext-${item.id}" class="text-[11px] text-slate-500 mt-0.5 text-right hidden"></div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function getBSA(weight, height, formula) {
+      if (!weight || !height || weight <= 0 || height <= 0) return null;
+      if (formula === 'mosteller') {
+        return Math.sqrt((weight * height) / 3600);
+      } else if (formula === 'dubois') {
+        return 0.007184 * Math.pow(weight, 0.425) * Math.pow(height, 0.725);
+      } else {
+        return 0.024265 * Math.pow(weight, 0.5378) * Math.pow(height, 0.3964);
+      }
+    }
+
+    function computeZ(item, val, bsa) {
+      if (!val || val <= 0 || !bsa || bsa <= 0) return null;
+
+      if (item.model === 'lopez') {
+        const lnBSA = Math.log(bsa);
+        const lnMean = item.b0 + (item.b1 * lnBSA) + (item.b2 * Math.pow(lnBSA, 2));
+        const mse = Math.exp(item.a0 + (item.a1 * lnBSA));
+        const sd = Math.sqrt(mse);
+        const z = (Math.log(val) - lnMean) / sd;
+        const meanVal = Math.exp(lnMean);
+        return { z, meanVal };
+      } else if (item.model === 'dallaire') {
+        const sqrtBSA = Math.sqrt(bsa);
+        const mean = item.c0 + (item.c1 * sqrtBSA);
+        const sd = item.s0 + (item.s1 * sqrtBSA);
+        const z = (val - mean) / sd;
+        return { z, meanVal: mean };
+      }
+      return null;
+    }
+
+    function calculateStructure(id) {
+      const item = structures.find(s => s.id === id);
+      if (!item) return;
+
+      const w = parseFloat(document.getElementById('patientWeight').value);
+      const h = parseFloat(document.getElementById('patientHeight').value);
+      const formula = document.getElementById('bsaFormula').value;
+      const bsa = getBSA(w, h, formula);
+
+      const val = parseFloat(document.getElementById(`input-${id}`).value);
+      const badge = document.getElementById(`badge-${id}`);
+      const pin = document.getElementById(`pin-${id}`);
+      const subtext = document.getElementById(`subtext-${id}`);
+
+      if (!val || isNaN(val) || !bsa) {
+        badge.className = 'w-20 text-center px-1.5 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-400';
+        badge.textContent = 'Z: --';
+        pin.style.left = '50%';
+        subtext.className = 'text-[11px] text-slate-500 mt-0.5 text-right hidden';
+        subtext.textContent = '';
+        updateRWT();
+        updateReport();
+        return;
+      }
+
+      const res = computeZ(item, val, bsa);
+      if (!res) return;
+
+      const z = res.z;
+      const zFormatted = (z >= 0 ? '+' : '') + z.toFixed(2);
+      badge.textContent = `Z: ${zFormatted}`;
+
+      const clampedZ = Math.max(-4, Math.min(4, z));
+      const percentage = ((clampedZ + 4) / 8) * 100;
+      pin.style.left = `${percentage}%`;
+
+      let colorClass = 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+      if (Math.abs(z) >= 3.0) {
+        colorClass = 'bg-rose-100 text-rose-800 border border-rose-300';
+      } else if (Math.abs(z) >= 2.0) {
+        colorClass = 'bg-amber-100 text-amber-800 border border-amber-300';
+      }
+      badge.className = `w-20 text-center px-1.5 py-0.5 rounded text-xs font-bold ${colorClass}`;
+
+      subtext.classList.remove('hidden');
+      subtext.textContent = `Media esperada: ${res.meanVal.toFixed(1)} mm`;
+
+      if (item.group === 'coronaries') {
+        let kawasakiStr = '';
+        if (z >= 10 || val >= 8) {
+          kawasakiStr = ' &bull; <strong class="text-rose-700">Aneurisma Gigante</strong>';
+        } else if (z >= 5) {
+          kawasakiStr = ' &bull; <strong class="text-rose-600">Aneurisma Mediano</strong>';
+        } else if (z >= 2.5) {
+          kawasakiStr = ' &bull; <strong class="text-amber-700">Aneurisma Pequeño</strong>';
+        } else if (z >= 2.0) {
+          kawasakiStr = ' &bull; <span class="text-amber-600 font-semibold">Dilatación</span>';
+        }
+        if (kawasakiStr) subtext.innerHTML += kawasakiStr;
+      }
+
+      updateRWT();
+      updateReport();
+    }
+
+    function calculateAll() {
+      const w = parseFloat(document.getElementById('patientWeight').value);
+      const h = parseFloat(document.getElementById('patientHeight').value);
+      const formula = document.getElementById('bsaFormula').value;
+      const bsa = getBSA(w, h, formula);
+
+      const bsaDisp = document.getElementById('bsaDisplay');
+      const bmiDisp = document.getElementById('bmiDisplay');
+      const warn = document.getElementById('warningBsa');
+
+      if (bsa) {
+        bsaDisp.textContent = `${bsa.toFixed(2)} m²`;
+        const bmi = w / Math.pow(h / 100, 2);
+        bmiDisp.textContent = `${bmi.toFixed(1)} kg/m²`;
+        warn.classList.add('hidden');
+      } else {
+        bsaDisp.textContent = '-- m²';
+        bmiDisp.textContent = '-- kg/m²';
+        warn.classList.remove('hidden');
+      }
+
+      structures.forEach(s => calculateStructure(s.id));
+      updateRWT();
+      updateReport();
+    }
+
+    function updateRWT() {
+      const lvedd = parseFloat(document.getElementById('input-lvedd')?.value);
+      const lvpwd = parseFloat(document.getElementById('input-lvpwd')?.value);
+      const rwtVal = document.getElementById('rwtVal');
+      const rwtBadge = document.getElementById('rwtBadge');
+
+      if (lvedd > 0 && lvpwd > 0) {
+        const rwt = (2 * lvpwd) / lvedd;
+        rwtVal.textContent = rwt.toFixed(2);
+
+        if (rwt > 0.41) {
+          rwtBadge.className = 'px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300';
+          rwtBadge.textContent = 'Aumentado (>0.41)';
+        } else {
+          rwtBadge.className = 'px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300';
+          rwtBadge.textContent = 'Normal (≤0.41)';
+        }
+      } else {
+        rwtVal.textContent = '--';
+        rwtBadge.className = 'px-2 py-0.5 rounded text-xs font-semibold bg-slate-200 text-slate-700';
+        rwtBadge.textContent = 'Sin datos';
+      }
+    }
+
+    function updateReport() {
+      const patientId = document.getElementById('patientId').value.trim() || 'No especificado';
+      const sex = document.getElementById('patientSex').value === 'male' ? 'Varón' : 'Mujer';
+      const w = document.getElementById('patientWeight').value;
+      const h = document.getElementById('patientHeight').value;
+      const bsa = document.getElementById('bsaDisplay').textContent;
+      const bmi = document.getElementById('bmiDisplay').textContent;
+
+      let report = `INFORME ECOCARDIOGRÁFICO - Z-SCORES PEDIÁTRICOS\n`;
+      report += `========================================================\n`;
+      report += `NHC/ID: ${patientId} | Sexo: ${sex}\n`;
+      report += `Somatometría: Peso: ${w || '--'} kg | Talla: ${h || '--'} cm | SC: ${bsa} (Haycock) | IMC: ${bmi}\n`;
+      report += `Referencias: Lopez et al. JASE 2017 (PHN) | Coronarias: Dallaire 2011\n`;
+      report += `--------------------------------------------------------\n\n`;
+
+      const groups = [
+        { key: 'aorta', title: 'VÁLVULA AÓRTICA Y SEGMENTOS AÓRTICOS' },
+        { key: 'pulmonary', title: 'VÁLVULAS Y ARTERIAS PULMONARES' },
+        { key: 'lv', title: 'VENTRÍCULO IZQUIERDO Y GEOMETRÍA' },
+        { key: 'coronaries', title: 'ARTERIAS CORONARIAS (CRITERIOS AHA KAWASAKI)' }
+      ];
+
+      let hasMeasurements = false;
+
+      groups.forEach(g => {
+        const items = structures.filter(s => s.group === g.key);
+        let groupText = '';
+
+        items.forEach(it => {
+          const input = document.getElementById(`input-${it.id}`);
+          const badge = document.getElementById(`badge-${it.id}`);
+          const val = parseFloat(input?.value);
+          if (val && !isNaN(val)) {
+            hasMeasurements = true;
+            const zText = badge.textContent.replace('Z: ', '').trim();
+            groupText += `  * ${it.name.padEnd(32, ' ')}: ${val.toFixed(1)} mm (Z-Score: ${zText})\n`;
+          }
+        });
+
+        if (groupText) {
+          report += `[${g.title}]\n${groupText}\n`;
+        }
+      });
+
+      const rwt = document.getElementById('rwtVal').textContent;
+      if (rwt !== '--') {
+        report += `Grosor Relativo de Pared (RWT): ${rwt} (${document.getElementById('rwtBadge').textContent})\n\n`;
+      }
+
+      if (!hasMeasurements) {
+        report += `(Introduzca mediciones para computar Z-scores e imprimir reporte)\n`;
+      }
+
+      report += `========================================================\n`;
+      report += `Generado en consulta de Cardiología Pediátrica.`;
+
+      document.getElementById('reportArea').value = report;
+    }
+
+    function copyReport() {
+      const area = document.getElementById('reportArea');
+      area.select();
+      navigator.clipboard.writeText(area.value).then(() => {
+        const btnText = document.getElementById('copyBtnText');
+        const orig = btnText.textContent;
+        btnText.textContent = '¡Copiado!';
+        setTimeout(() => { btnText.textContent = orig; }, 1800);
+      }).catch(() => {
+        document.execCommand('copy');
+      });
+    }
+
+    function downloadReport() {
+      const text = document.getElementById('reportArea').value;
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ZScores_${document.getElementById('patientId').value.trim() || 'Eco'}.txt`;
+      a.click();
+    }
+
+    function loadPreset(type) {
+      resetAll();
+      if (type === 'neonato') {
+        document.getElementById('patientWeight').value = '3.3';
+        document.getElementById('patientHeight').value = '50';
+        document.getElementById('input-av_annulus').value = '6.8';
+        document.getElementById('input-sinus_valsalva').value = '8.5';
+        document.getElementById('input-sinotubular_junct').value = '7.0';
+        document.getElementById('input-asc_aorta').value = '7.2';
+        document.getElementById('input-prox_transverse_arch').value = '6.2';
+        document.getElementById('input-dist_transverse_arch').value = '5.8';
+        document.getElementById('input-isthmus').value = '5.0';
+        document.getElementById('input-desc_aorta').value = '5.5';
+        document.getElementById('input-lvedd').value = '17.5';
+        document.getElementById('input-lvesd').value = '11.0';
+        document.getElementById('input-ivsd').value = '3.8';
+        document.getElementById('input-lvpwd').value = '3.6';
+      } else if (type === 'lactante') {
+        document.getElementById('patientWeight').value = '7.5';
+        document.getElementById('patientHeight').value = '67';
+        document.getElementById('input-av_annulus').value = '9.8';
+        document.getElementById('input-sinus_valsalva').value = '12.4';
+        document.getElementById('input-sinotubular_junct').value = '10.1';
+        document.getElementById('input-asc_aorta').value = '10.5';
+        document.getElementById('input-prox_transverse_arch').value = '9.0';
+        document.getElementById('input-dist_transverse_arch').value = '8.4';
+        document.getElementById('input-isthmus').value = '7.5';
+        document.getElementById('input-desc_aorta').value = '8.0';
+        document.getElementById('input-lvedd').value = '25.0';
+        document.getElementById('input-lvesd').value = '16.0';
+      } else if (type === 'escolar') {
+        document.getElementById('patientWeight').value = '24';
+        document.getElementById('patientHeight').value = '122';
+        document.getElementById('input-av_annulus').value = '14.5';
+        document.getElementById('input-sinus_valsalva').value = '18.2';
+        document.getElementById('input-sinotubular_junct').value = '14.8';
+        document.getElementById('input-asc_aorta').value = '15.8';
+        document.getElementById('input-prox_transverse_arch').value = '13.5';
+        document.getElementById('input-dist_transverse_arch').value = '12.8';
+        document.getElementById('input-isthmus').value = '11.4';
+        document.getElementById('input-desc_aorta').value = '12.0';
+        document.getElementById('input-lvedd').value = '37.5';
+        document.getElementById('input-lvesd').value = '23.8';
+        document.getElementById('input-lmca').value = '2.8';
+        document.getElementById('input-lad').value = '2.1';
+        document.getElementById('input-rca').value = '2.2';
+      } else if (type === 'adolescente') {
+        document.getElementById('patientWeight').value = '54';
+        document.getElementById('patientHeight').value = '166';
+        document.getElementById('input-av_annulus').value = '19.2';
+        document.getElementById('input-sinus_valsalva').value = '26.8';
+        document.getElementById('input-sinotubular_junct').value = '21.5';
+        document.getElementById('input-asc_aorta').value = '23.5';
+        document.getElementById('input-prox_transverse_arch').value = '19.8';
+        document.getElementById('input-dist_transverse_arch').value = '18.6';
+        document.getElementById('input-isthmus').value = '16.5';
+        document.getElementById('input-desc_aorta').value = '17.2';
+        document.getElementById('input-lvedd').value = '46.5';
+        document.getElementById('input-lvesd').value = '29.0';
+      } else if (type === 'coartacion') {
+        document.getElementById('patientWeight').value = '3.5';
+        document.getElementById('patientHeight').value = '51';
+        document.getElementById('input-av_annulus').value = '6.5';
+        document.getElementById('input-asc_aorta').value = '7.0';
+        document.getElementById('input-prox_transverse_arch').value = '4.2'; // Limítrofe
+        document.getElementById('input-dist_transverse_arch').value = '3.5'; // Hipoplasia severa
+        document.getElementById('input-isthmus').value = '2.4';              // Z < -3.5 Coartación
+        document.getElementById('input-desc_aorta').value = '5.6';
+      }
+      calculateAll();
+    }
+
+    function resetAll() {
+      document.getElementById('patientId').value = '';
+      document.getElementById('patientWeight').value = '';
+      document.getElementById('patientHeight').value = '';
+      structures.forEach(s => {
+        const inp = document.getElementById(`input-${s.id}`);
+        if (inp) inp.value = '';
+      });
+      calculateAll();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      buildInterface();
+      calculateAll();
+    });
+  </script>
+</body>
+</html>
