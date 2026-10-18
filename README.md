@@ -1,2 +1,2 @@
 # CardioPedZScore
-Calculadora de ZScore pediátrico para su uso diaruo
+Calculadora de ZScore pediátrico para su uso diario
